@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ClaimCheck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <p class="brand">ClaimCheck</p>
+        <p class="tagline">Assistente de verificação de afirmações</p>
+      </header>
+
+      <section class="controls" aria-label="Controles">
+        <div class="mode" role="radiogroup" aria-label="Modo de análise">
+          <label class="mode-option">
+            <input type="radio" name="mode" value="article" checked />
+            <span>Artigo</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="mode" value="selection" />
+            <span>Seleção</span>
+          </label>
+        </div>
+
+        <button id="verify-btn" class="btn primary" type="button">
+          Verificar
+        </button>
+        <a class="settings-link" href="options.html" target="_blank" rel="noreferrer"
+          >Configurar API key</a
+        >
+      </section>
+
+      <section id="state" class="state" aria-live="polite">
+        <div class="empty" data-view="empty">
+          <p class="empty-title">Pronto para checar</p>
+          <p class="empty-copy">
+            Abra uma página com texto, escolha o modo e toque em Verificar.
+          </p>
+        </div>
+      </section>
+
+      <footer class="disclaimer">
+        Verificação assistida por IA. Pode errar. Confira as fontes antes de
+        compartilhar.
+      </footer>
+    </div>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ClaimCheck — Opções</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="hero">
+        <p class="brand">ClaimCheck</p>
+        <h1>Configuração</h1>
+        <p class="lede">
+          Só precisa de <strong>uma API key</strong> do LLM. A busca na web é feita pelo
+          <strong>agente ClaimCheck</strong> — igual para OpenAI, DeepSeek ou Gemini.
+        </p>
+      </header>
+
+      <form id="settings-form" class="form">
+        <label for="provider">Provedor de IA</label>
+        <select id="provider" name="provider">
+          <option value="deepseek">DeepSeek</option>
+          <option value="gemini">Gemini</option>
+          <option value="openai">OpenAI</option>
+        </select>
+
+        <label for="api-key">API key</label>
+        <input
+          id="api-key"
+          name="apiKey"
+          type="password"
+          autocomplete="off"
+          placeholder="Cole sua API key aqui"
+          spellcheck="false"
+        />
+        <p id="provider-hint" class="hint"></p>
+
+        <div class="actions">
+          <button type="submit" class="btn primary">Salvar</button>
+          <button type="button" id="toggle-visibility" class="btn ghost">Mostrar</button>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

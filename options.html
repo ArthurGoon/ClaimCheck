@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ClaimCheck — Opções</title>
+    <title>ClaimCheck: opções</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,37 +18,42 @@
         <p class="brand">ClaimCheck</p>
         <h1>Configuração</h1>
         <p class="lede">
-          Só precisa de <strong>uma API key</strong> do LLM. A busca na web é feita pelo
-          <strong>agente ClaimCheck</strong> — igual para OpenAI, DeepSeek ou Gemini.
+          O LLM extrai as afirmações e dá o veredito. A busca de evidências usa a API da
+          Wikipedia e, opcionalmente, um buscador web. As chaves ficam só neste navegador
+          (<code>chrome.storage.local</code>).
         </p>
       </header>
 
       <form id="settings-form" class="form">
-        <label for="provider">Provedor de IA</label>
-        <select id="provider" name="provider">
-          <option value="deepseek">DeepSeek</option>
-          <option value="gemini">Gemini</option>
-          <option value="openai">OpenAI</option>
-        </select>
+        <label for="llm-provider">Provedor de LLM</label>
+        <select id="llm-provider"></select>
 
-        <label for="api-key">API key</label>
-        <input
-          id="api-key"
-          name="apiKey"
-          type="password"
-          autocomplete="off"
-          placeholder="Cole sua API key aqui"
-          spellcheck="false"
-        />
-        <p id="provider-hint" class="hint"></p>
+        <label for="llm-key">API key do LLM</label>
+        <input id="llm-key" type="password" autocomplete="off" spellcheck="false" placeholder="Cole sua API key aqui" />
+
+        <label for="llm-model">Modelo</label>
+        <input id="llm-model" type="text" autocomplete="off" spellcheck="false" />
+        <p id="llm-hint" class="hint"></p>
+
+        <label for="search-provider">Busca na web</label>
+        <select id="search-provider"></select>
+
+        <div id="search-key-row" class="form-row">
+          <label for="search-key">API key da busca</label>
+          <input id="search-key" type="password" autocomplete="off" spellcheck="false" />
+        </div>
+        <p id="search-hint" class="hint"></p>
+
+        <label for="max-claims">Máximo de afirmações por página</label>
+        <input id="max-claims" type="number" min="1" max="8" step="1" />
 
         <div class="actions">
           <button type="submit" class="btn primary">Salvar</button>
-          <button type="button" id="toggle-visibility" class="btn ghost">Mostrar</button>
+          <button type="button" id="toggle-visibility" class="btn ghost">Mostrar chaves</button>
         </div>
         <p id="status" class="status" role="status" aria-live="polite"></p>
       </form>
     </main>
-    <script src="options.js"></script>
+    <script type="module" src="options.js"></script>
   </body>
 </html>

@@ -167,3 +167,12 @@ input:focus {
 .status.error {
   color: var(--danger);
 }
+
+.form-row {
+  display: grid;
+  gap: 0.65rem;
+}
+
+[hidden] {
+  display: none !important;
+}

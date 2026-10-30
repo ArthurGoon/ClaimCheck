@@ -278,22 +278,22 @@ body {
   border-radius: 999px;
 }
 
-.verdict.true {
+.verdict.supported {
   color: var(--true);
   background: var(--true-bg);
 }
 
-.verdict.false {
+.verdict.refuted {
   color: var(--false);
   background: var(--false-bg);
 }
 
-.verdict.misleading {
+.verdict.error {
   color: var(--misleading);
   background: var(--misleading-bg);
 }
 
-.verdict.unverifiable {
+.verdict.not_enough_evidence {
   color: var(--unverifiable);
   background: var(--unverifiable-bg);
 }
@@ -337,6 +337,53 @@ body {
 
 .sources a:hover {
   border-bottom-color: var(--teal-deep);
+}
+
+.source-id {
+  display: inline-block;
+  min-width: 1.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.source-domain {
+  margin-left: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.evidence-toggle {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.evidence-toggle summary {
+  cursor: pointer;
+}
+
+.evidence-list {
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.evidence-list p {
+  margin: 0.15rem 0 0;
+  line-height: 1.4;
+}
+
+.warnings {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  background: var(--misleading-bg);
+  color: var(--misleading);
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .disclaimer {

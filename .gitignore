@@ -5,3 +5,5 @@
 *.pem
 .env
 .env.*
+node_modules/
+eval/results/

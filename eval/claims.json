@@ -1,0 +1,28 @@
+[
+  { "id": "en-sup-01", "lang": "en", "label": "supported", "claim": "Mount Everest is the highest mountain above sea level on Earth." },
+  { "id": "en-sup-02", "lang": "en", "label": "supported", "claim": "Marie Curie won Nobel Prizes in both Physics and Chemistry." },
+  { "id": "en-sup-03", "lang": "en", "label": "supported", "claim": "The Berlin Wall fell in 1989." },
+  { "id": "en-sup-04", "lang": "en", "label": "supported", "claim": "Canberra is the capital of Australia." },
+  { "id": "pt-sup-01", "lang": "pt", "label": "supported", "claim": "Brasília foi inaugurada como capital do Brasil em 1960." },
+  { "id": "pt-sup-02", "lang": "pt", "label": "supported", "claim": "O rio Amazonas deságua no oceano Atlântico." },
+  { "id": "pt-sup-03", "lang": "pt", "label": "supported", "claim": "Machado de Assis foi o primeiro presidente da Academia Brasileira de Letras." },
+  { "id": "pt-sup-04", "lang": "pt", "label": "supported", "claim": "Alberto Santos-Dumont nasceu no estado de Minas Gerais." },
+
+  { "id": "en-ref-01", "lang": "en", "label": "refuted", "claim": "The Berlin Wall fell in 1991.", "note": "caiu em 1989" },
+  { "id": "en-ref-02", "lang": "en", "label": "refuted", "claim": "Sydney is the capital of Australia.", "note": "a capital é Canberra" },
+  { "id": "en-ref-03", "lang": "en", "label": "refuted", "claim": "Albert Einstein won the Nobel Prize in Physics for his theory of relativity.", "note": "o prêmio de 1921 citou o efeito fotoelétrico" },
+  { "id": "en-ref-04", "lang": "en", "label": "refuted", "claim": "The Pacific Ocean is the smallest ocean on Earth.", "note": "é o maior" },
+  { "id": "pt-ref-01", "lang": "pt", "label": "refuted", "claim": "Brasília foi inaugurada como capital do Brasil em 1970.", "note": "foi em 1960" },
+  { "id": "pt-ref-02", "lang": "pt", "label": "refuted", "claim": "O Brasil conquistou a Copa do Mundo de 2002 em uma final disputada na Alemanha.", "note": "a final foi em Yokohama, Japão" },
+  { "id": "pt-ref-03", "lang": "pt", "label": "refuted", "claim": "Dom Pedro I proclamou a República no Brasil em 1889.", "note": "foi Deodoro da Fonseca" },
+  { "id": "pt-ref-04", "lang": "pt", "label": "refuted", "claim": "O Monte Roraima é o ponto mais alto do Brasil.", "note": "é o Pico da Neblina" },
+
+  { "id": "en-nee-01", "lang": "en", "label": "not_enough_evidence", "claim": "Marie Curie had breakfast with her sister Bronisława on 3 March 1903.", "note": "detalhe privado, sem registro público" },
+  { "id": "en-nee-02", "lang": "en", "label": "not_enough_evidence", "claim": "Lisbon will host the Summer Olympic Games in 2048.", "note": "evento futuro não decidido" },
+  { "id": "en-nee-03", "lang": "en", "label": "not_enough_evidence", "claim": "Exactly 4,213 people visited the Louvre on the day it first opened to the public in 1793.", "note": "número específico sem fonte" },
+  { "id": "en-nee-04", "lang": "en", "label": "not_enough_evidence", "claim": "Isaac Newton's favourite meal was roast pheasant.", "note": "preferência pessoal sem registro confiável" },
+  { "id": "pt-nee-01", "lang": "pt", "label": "not_enough_evidence", "claim": "Machado de Assis escreveu o primeiro rascunho de Dom Casmurro usando apenas tinta azul.", "note": "detalhe sem registro" },
+  { "id": "pt-nee-02", "lang": "pt", "label": "not_enough_evidence", "claim": "O primeiro morador oficial de Brasília tinha olhos verdes.", "note": "detalhe sem registro" },
+  { "id": "pt-nee-03", "lang": "pt", "label": "not_enough_evidence", "claim": "A próxima Copa do Mundo masculina realizada no Brasil será em 2042.", "note": "evento futuro não decidido" },
+  { "id": "pt-nee-04", "lang": "pt", "label": "not_enough_evidence", "claim": "Santos-Dumont pensou em desistir da aviação no dia 10 de maio de 1905.", "note": "estado mental em data específica, sem fonte" }
+]

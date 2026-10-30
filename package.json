@@ -1,0 +1,16 @@
+{
+  "name": "claimcheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Extensão Chrome de verificação de afirmações. O package.json existe só para os scripts de desenvolvimento; a extensão não tem build.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "check": "node scripts/check-syntax.mjs",
+    "eval": "node eval/run.mjs"
+  }
+}

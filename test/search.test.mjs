@@ -134,3 +134,24 @@ test("gatherEvidence não quebra quando tudo falha (timeout/rede)", async () => 
   assert.deepEqual(out.evidence, []);
   assert.ok(out.warnings.length >= 2);
 });
+
+test("a própria página checada não entra como evidência", async () => {
+  const fetchImpl = mockFetch([
+    [
+      /list=search/,
+      () => jsonResponse({ query: { search: [{ title: "Brasília", snippet: "Brasília foi inaugurada em 1960" }, { title: "Juscelino Kubitschek", snippet: "inaugurou Brasília em 1960" }] } }),
+    ],
+    [/prop=extracts/, () => jsonResponse({ query: { pages: [] } })],
+  ]);
+  const out = await gatherEvidence({
+    claim: "Brasília foi inaugurada em 1960.",
+    lang: "pt",
+    search: { provider: "wikipedia" },
+    excludeUrls: ["https://pt.m.wikipedia.org/wiki/Bras%C3%ADlia#Hist%C3%B3ria"],
+    deps: { fetchImpl, sleep: noSleep },
+  });
+  assert.ok(out.evidence.length > 0);
+  const urls = out.evidence.map((e) => e.url);
+  assert.ok(!urls.includes("https://pt.wikipedia.org/wiki/Bras%C3%ADlia"), urls.join(" "));
+  assert.ok(urls.includes("https://en.wikipedia.org/wiki/Bras%C3%ADlia"), "outra edição da Wikipedia continua valendo");
+});

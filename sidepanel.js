@@ -88,7 +88,7 @@ async function refreshTab() {
   if (!state.run && state.tab) {
     const key = `report:${state.tab.id}`;
     const saved = (await chrome.storage.session.get(key).catch(() => ({})))[key];
-    state.report = saved && saved.url === state.tab.url ? saved : null;
+    state.report = saved && samePage(saved.url, state.tab.url) ? saved : null;
     state.error = null;
   }
 }
@@ -106,7 +106,7 @@ async function onTabChange(windowId) {
     renderPageCard();
     return;
   }
-  if (state.tab?.id !== previousId || state.tab?.url !== previousUrl) render();
+  if (state.tab?.id !== previousId || !samePage(state.tab?.url, previousUrl)) render();
   else renderPageCard();
 }
 
@@ -374,8 +374,8 @@ function claimCard(c, index, { tabId, fresh = false }) {
 
   const sources = (c.citations || [])
     .map(
-      (s) => `<a class="source" href="${safeUrl(s.url)}" target="_blank" rel="noreferrer noopener" title="${attr(s.title)}">
-        ${avatar(s.domain, "sm")}<span>${escapeHtml(s.domain)}</span></a>`
+      (s) => `<a class="source" href="${safeUrl(s.url)}" target="_blank" rel="noreferrer noopener" title="${attr(`${s.title} · ${s.domain}`)}">
+        ${avatar(s.domain, "sm")}<span>${escapeHtml(sourceLabel(s))}</span></a>`
     )
     .join("");
 
@@ -384,7 +384,7 @@ function claimCard(c, index, { tabId, fresh = false }) {
       (e) => `<li class="evidence-item ${cited.has(e.id) ? "cited" : ""}">
         <a href="${safeUrl(e.url)}" target="_blank" rel="noreferrer noopener" class="evidence-head">
           ${avatar(e.domain, "sm")}
-          <span class="evidence-title">${escapeHtml(e.title)}</span>
+          <span class="evidence-title">${escapeHtml(cleanTitle(e.title))}</span>
           ${cited.has(e.id) ? `<span class="badge">citada</span>` : ""}
         </a>
         <p class="evidence-domain">${escapeHtml(e.domain)}</p>
@@ -771,6 +771,11 @@ function plural(n, one, many) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/** Mesma página, ignorando a âncora (#seção). */
+function samePage(a, b) {
+  return String(a || "").split("#")[0] === String(b || "").split("#")[0];
+}
+
 function domainOf(url) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -787,6 +792,18 @@ function avatar(domain, size = "") {
   for (const ch of base) hash = (hash * 31 + ch.charCodeAt(0)) % 360;
   const letter = base.charAt(0).toUpperCase() || "?";
   return `<span class="avatar ${size}" style="--h:${hash}" aria-hidden="true">${escapeHtml(letter)}</span>`;
+}
+
+/** Na Wikipedia o título do artigo diz mais que o domínio; nas outras fontes, o domínio. */
+function sourceLabel(source) {
+  const wiki = /wikipedia\.org$/.test(source.domain || "");
+  if (!wiki) return source.domain;
+  const lang = (source.domain.match(/^([a-z]{2,3})\./) || [])[1] || "";
+  return `${truncate(cleanTitle(source.title), 30)}${lang ? ` (${lang.toUpperCase()})` : ""}`;
+}
+
+function cleanTitle(title) {
+  return String(title || "").replace(/\s*\(Wikipedia [A-Z]+\)$/, "");
 }
 
 function truncate(text, max) {

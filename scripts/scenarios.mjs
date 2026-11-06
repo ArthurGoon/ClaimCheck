@@ -56,6 +56,7 @@ export const SCENARIOS = {
         },
         {
           match: "Muro da Vergonha",
+          delayMs: 2500,
           verdict: "supported",
           confidence: 0.9,
           explanation: "As fontes atribuem a expressão \"Muro da Vergonha\" a Willy Brandt, então prefeito de Berlim Ocidental.",
@@ -63,6 +64,7 @@ export const SCENARIOS = {
         },
         {
           match: "3,5 milhões",
+          delayMs: 2500,
           verdict: "supported",
           confidence: 0.9,
           explanation: "A Wikipedia em inglês cita 3,5 milhões de alemães orientais que deixaram a RDA antes do Muro, cerca de 20% da população.",
@@ -70,6 +72,7 @@ export const SCENARIOS = {
         },
         {
           match: "9 de novembro de 1989",
+          delayMs: 2500,
           verdict: "supported",
           confidence: 0.88,
           explanation: "As fontes registram o anúncio de 9 de novembro de 1989 que liberou as viagens dos alemães orientais.",
@@ -77,6 +80,7 @@ export const SCENARIOS = {
         },
         {
           match: "197 mil",
+          delayMs: 2500,
           verdict: "not_enough_evidence",
           confidence: 0.45,
           explanation: "As fontes trazem esses números, mas para europeus orientais que pediram asilo na Alemanha Ocidental, não só cidadãos da RDA.",

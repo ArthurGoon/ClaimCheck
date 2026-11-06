@@ -4,13 +4,15 @@
 // Serve como teste ponta a ponta da interface sem precisar de chave de LLM.
 //
 // Uso:
-//   node scripts/screenshots.mjs                 # salva em docs/screenshots/
+//   node scripts/screenshots.mjs                 # salva tudo numa pasta temporária
 //   node scripts/screenshots.mjs --out /tmp/x    # outra pasta
+//   node scripts/screenshots.mjs --docs          # também copia as imagens do README para docs/
 //   node scripts/screenshots.mjs --headful       # abre a janela (útil para depurar)
 //
 // Precisa de Google Chrome ou Chromium instalado (CHROME_PATH para outro caminho) e de rede.
 
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -20,7 +22,8 @@ import { SCENARIOS } from "./scenarios.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const { values: args } = parseArgs({
   options: {
-    out: { type: "string", default: join(root, "docs", "screenshots") },
+    out: { type: "string", default: join(tmpdir(), "claimcheck-screenshots") },
+    docs: { type: "boolean", default: false },
     headful: { type: "boolean", default: false },
     scenario: { type: "string", default: "muro" },
   },
@@ -90,6 +93,10 @@ try {
   check("sem chave abre a configuração", (await text("h1")).includes("Configure"));
   await shot("01-onboarding");
 
+  // Chave de outro provedor colada com a OpenRouter selecionada: o painel oferece a troca.
+  await type("#key-input", "sk-ant-api03-chave-de-exemplo");
+  check("reconhece chave de outro provedor pelo prefixo", (await text("#key-hint .switch")).includes("Anthropic"), await text("#key-hint .switch"));
+
   // Chave falsa contra a OpenRouter de verdade: testa o caminho de erro real (401).
   await type("#key-input", "sk-or-v1-chave-falsa-para-teste-0000000000");
   await click("#test-btn");
@@ -111,7 +118,7 @@ try {
 
   // 2. Verificação da página inteira.
   await click("#verify-btn");
-  await waitFor(`document.querySelectorAll(".claim.pending").length > 0 && document.querySelectorAll(".claim:not(.pending)").length > 0`);
+  await waitFor(`document.querySelectorAll(".claim.pending").length > 1 && document.querySelectorAll(".claim:not(.pending)").length >= 1`);
   await shot("05-progresso");
   await waitFor(`!document.querySelector(".stepper") && !!document.querySelector(".summary")`, 120_000);
   const verdicts = await panel.evaluate(`[...document.querySelectorAll(".claim .chip")].map((c) => c.innerText.trim())`);
@@ -120,6 +127,11 @@ try {
   check("vereditos citam fontes reais encontradas pela busca", sources > 0, `${sources} fontes citadas`);
   await panel.evaluate(`window.scrollTo(0, 0)`);
   await shot("06-resultado");
+
+  // Reabrir o painel mostra o último resultado da aba.
+  await panel.send("Page.reload");
+  await waitFor(`!!document.querySelector(".summary")`, 10_000).catch(() => {});
+  check("reabrir o painel mantém o resultado", await panel.evaluate(`!!document.querySelector(".summary")`));
   const saved = await sw.evaluate(`chrome.storage.session.get("report:${tabId}").then((r) => r["report:${tabId}"])`);
   writeFileSync(join(outDir, "report.json"), JSON.stringify(saved, null, 2));
 
@@ -219,6 +231,23 @@ try {
 
 writeFileSync(join(outDir, "checks.json"), JSON.stringify(checks, null, 2));
 const failed = checks.filter((c) => !c.ok);
+console.log(`\nImagens em ${outDir}`);
+
+// Imagens usadas no README.
+const README_IMAGES = {
+  "claimcheck.png": "claimcheck.png",
+  "claimcheck-fontes.png": "claimcheck-fontes.png",
+  "03-onboarding-ok.png": "configuracao.png",
+  "05-progresso.png": "progresso.png",
+  "11-erro.png": "erro.png",
+  "10-resultado-escuro.png": "modo-escuro.png",
+};
+if (args.docs && !failed.length) {
+  const docs = join(root, "docs");
+  mkdirSync(docs, { recursive: true });
+  for (const [from, to] of Object.entries(README_IMAGES)) copyFileSync(join(outDir, from), join(docs, to));
+  console.log(`README: ${Object.keys(README_IMAGES).length} imagens copiadas para docs/`);
+}
 console.log(`\n${checks.length - failed.length}/${checks.length} verificações ok`);
 process.exit(failed.length ? 1 : 0);
 

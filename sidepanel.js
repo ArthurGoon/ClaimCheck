@@ -609,7 +609,7 @@ function renderSetup({ onboarding }) {
     const id = modelSelect.value === "__custom" ? modelCustom.value.trim() : modelSelect.value;
     $("#model-hint").innerHTML =
       p.id === "openrouter"
-        ? `Qualquer modelo do <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer">catálogo da OpenRouter</a> funciona.${
+        ? `Dá para usar outro modelo do <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer">catálogo da OpenRouter</a>.${
             id ? ` Id: <code>${escapeHtml(id)}</code>` : ""
           }`
         : id

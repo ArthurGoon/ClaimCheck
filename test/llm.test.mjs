@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { callLLM, completeJSON, toGeminiSchema, LLMError } from "../lib/llm.js";
+import { callLLM, completeJSON, testConnection, toGeminiSchema, LLMError } from "../lib/llm.js";
 import { VERDICT_SCHEMA } from "../lib/schemas.js";
 import { normalizeVerdictPayload } from "../lib/verify.js";
 import { mockFetch, noSleep, jsonResponse, chatCompletion, anthropicMessage, geminiResponse } from "./helpers.mjs";
@@ -40,12 +40,62 @@ test("OpenAI: se o schema for recusado com 400, repete com json_object e schema 
   assert.ok(fetchImpl.calls[1].body.messages[0].content.includes("JSON Schema"));
 });
 
-test("DeepSeek: JSON mode com schema descrito no prompt", async () => {
-  const fetchImpl = mockFetch([[/api\.deepseek\.com\/chat\/completions/, () => chatCompletion(VALID)]]);
-  await callLLM({ ...base, provider: "deepseek", fetchImpl });
-  const body = fetchImpl.calls[0].body;
-  assert.deepEqual(body.response_format, { type: "json_object" });
-  assert.ok(body.messages[0].content.includes('"verdict"'));
+test("OpenRouter: endpoint OpenAI-compatível, json_schema, require_parameters e headers de atribuição", async () => {
+  const fetchImpl = mockFetch([[/openrouter\.ai\/api\/v1\/chat\/completions/, () => chatCompletion(VALID)]]);
+  const text = await callLLM({ ...base, provider: "openrouter", model: "openai/gpt-6-luna", fetchImpl });
+  assert.equal(text, VALID);
+  const { init, body } = fetchImpl.calls[0];
+  assert.equal(init.headers.Authorization, "Bearer k");
+  assert.equal(init.headers["HTTP-Referer"], "https://github.com/ArthurGoon/ClaimCheck");
+  assert.equal(init.headers["X-Title"], "ClaimCheck");
+  assert.equal(body.model, "openai/gpt-6-luna");
+  assert.equal(body.response_format.type, "json_schema");
+  assert.equal(body.response_format.json_schema.strict, true);
+  assert.deepEqual(body.provider, { require_parameters: true });
+});
+
+test("OpenRouter: modelo sem structured output (404 de roteamento) cai para JSON pelo prompt", async () => {
+  const fetchImpl = mockFetch([
+    [
+      /openrouter\.ai/,
+      (_url, init) => {
+        const body = JSON.parse(init.body);
+        if (body.response_format.type === "json_schema") {
+          return jsonResponse({ error: { code: 404, message: "No endpoints found that can handle the requested parameters." } }, 404);
+        }
+        return chatCompletion(VALID);
+      },
+    ],
+  ]);
+  const text = await callLLM({ ...base, provider: "openrouter", fetchImpl });
+  assert.equal(text, VALID);
+  const retry = fetchImpl.calls[1].body;
+  assert.deepEqual(retry.response_format, { type: "json_object" });
+  assert.equal(retry.provider, undefined);
+  assert.ok(retry.messages[0].content.includes('"verdict"'));
+});
+
+test("OpenRouter: erro do modelo com HTTP 200 vira erro claro", async () => {
+  const fetchImpl = mockFetch([
+    [/openrouter\.ai/, () => jsonResponse({ choices: [{ error: { code: 502, message: "upstream down" }, finish_reason: "error" }] })],
+  ]);
+  await assert.rejects(callLLM({ ...base, provider: "openrouter", fetchImpl }), (err) => err instanceof LLMError && /HTTP 502/.test(err.message));
+});
+
+test("OpenRouter: 402 avisa que faltam créditos", async () => {
+  const fetchImpl = mockFetch([[/openrouter\.ai/, () => jsonResponse({ error: { code: 402, message: "Insufficient credits" } }, 402)]]);
+  await assert.rejects(
+    callLLM({ ...base, provider: "openrouter", fetchImpl }),
+    (err) => err instanceof LLMError && err.code === "NO_CREDITS" && /créditos/.test(err.message)
+  );
+});
+
+test("testConnection faz uma chamada real mínima com schema", async () => {
+  const fetchImpl = mockFetch([[/openrouter\.ai/, () => chatCompletion('{"ok": true}')]]);
+  const out = await testConnection({ provider: "openrouter", apiKey: "k", model: "m" }, { fetchImpl, sleep: noSleep });
+  assert.equal(out.ok, true);
+  assert.equal(fetchImpl.calls.length, 1);
+  assert.equal(fetchImpl.calls[0].body.response_format.json_schema.name, "ping");
 });
 
 test("Anthropic: headers de browser, output_config e só blocos de texto", async () => {
@@ -92,8 +142,8 @@ test("completeJSON tenta de novo quando a primeira resposta é inválida", async
 
 test("completeJSON corrige sinônimos via normalize sem precisar de retry", async () => {
   const loose = JSON.stringify({ verdict: "false", confidence: 90, explanation: "x", citations: ["E1"] });
-  const fetchImpl = mockFetch([[/api\.deepseek\.com/, () => chatCompletion(loose)]]);
-  const out = await completeJSON({ ...base, provider: "deepseek", fetchImpl, normalize: normalizeVerdictPayload });
+  const fetchImpl = mockFetch([[/openrouter\.ai/, () => chatCompletion(loose)]]);
+  const out = await completeJSON({ ...base, provider: "openrouter", fetchImpl, normalize: normalizeVerdictPayload });
   assert.equal(out.verdict, "refuted");
   assert.equal(out.confidence, 0.9);
   assert.equal(fetchImpl.calls.length, 1);
@@ -130,8 +180,8 @@ test("429 é repetido respeitando Retry-After e depois funciona", async () => {
 
 test("erros HTTP viram mensagens claras", async () => {
   const cases = [
-    [401, /API key recusada/],
-    [404, /Modelo não encontrado/],
+    [401, /recusou a chave/],
+    [404, /não encontrou esse modelo/],
     [429, /Limite de uso/],
   ];
   for (const [status, pattern] of cases) {
@@ -144,4 +194,14 @@ test("sem API key falha antes de qualquer requisição", async () => {
   const fetchImpl = mockFetch([]);
   await assert.rejects(callLLM({ ...base, apiKey: "", provider: "openai", fetchImpl }), LLMError);
   assert.equal(fetchImpl.calls.length, 0);
+});
+
+test("Gemini: chave inválida (HTTP 400) vira erro de chave, não de schema", async () => {
+  const body = { error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT" } };
+  const fetchImpl = mockFetch([[/generativelanguage/, () => jsonResponse(body, 400)]]);
+  await assert.rejects(
+    callLLM({ ...base, provider: "gemini", fetchImpl }),
+    (err) => err instanceof LLMError && err.code === "BAD_KEY"
+  );
+  assert.equal(fetchImpl.calls.length, 1, "não repete sem schema");
 });

@@ -4,10 +4,22 @@ import { normalizeExtractedClaims } from "../lib/claims.js";
 
 test("normaliza o formato do schema", () => {
   const out = normalizeExtractedClaims({
-    claims: [{ text: "  Brasília foi inaugurada em 1960.  ", context: "Capital do Brasil", search_query: "Brasilia inauguration 1960" }],
+    claims: [
+      {
+        text: "  Brasília foi inaugurada em 1960.  ",
+        quote: "“inaugurada em 21 de abril de 1960”",
+        context: "Capital do Brasil",
+        search_query: "Brasilia inauguration 1960",
+      },
+    ],
   });
   assert.deepEqual(out, [
-    { text: "Brasília foi inaugurada em 1960.", context: "Capital do Brasil", searchQuery: "Brasilia inauguration 1960" },
+    {
+      text: "Brasília foi inaugurada em 1960.",
+      quote: "inaugurada em 21 de abril de 1960",
+      context: "Capital do Brasil",
+      searchQuery: "Brasilia inauguration 1960",
+    },
   ]);
 });
 

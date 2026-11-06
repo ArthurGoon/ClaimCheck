@@ -1,35 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { parseDuckDuckGoHtml, decodeDuckDuckGoUrl, searchBrave, searchTavily } from "../lib/search/web.js";
+import { searchBrave, searchTavily } from "../lib/search/web.js";
 import { searchWikipedia } from "../lib/search/wikipedia.js";
 import { gatherEvidence, guessLanguage } from "../lib/search/index.js";
 import { mockFetch, noSleep, jsonResponse, textResponse } from "./helpers.mjs";
-
-const ddgHtml = readFileSync(new URL("./fixtures/duckduckgo.html", import.meta.url), "utf8");
-
-test("parseDuckDuckGoHtml extrai título, URL real e snippet, sem anúncios", () => {
-  const results = parseDuckDuckGoHtml(ddgHtml);
-  assert.equal(results.length, 2);
-  assert.deepEqual(results[0], {
-    title: "Brasília - Wikipédia",
-    url: "https://pt.wikipedia.org/wiki/Brasília",
-    text: "A cidade foi inaugurada em 21 de abril de 1960 como nova capital.",
-    provider: "duckduckgo",
-  });
-  assert.equal(results[1].url, "https://exemplo.com.br/historia?a=1&b=2");
-  assert.equal(results[1].title, "História & capital");
-});
-
-test("parseDuckDuckGoHtml devolve vazio para página de bloqueio ou layout novo", () => {
-  assert.deepEqual(parseDuckDuckGoHtml("<html><body>Unfortunately, bots use DuckDuckGo too.</body></html>"), []);
-  assert.deepEqual(parseDuckDuckGoHtml(""), []);
-});
-
-test("decodeDuckDuckGoUrl recusa esquemas não http", () => {
-  assert.equal(decodeDuckDuckGoUrl("javascript:alert(1)"), "");
-  assert.equal(decodeDuckDuckGoUrl("//duckduckgo.com/l/?uddg=https%3A%2F%2Fa.com%2F"), "https://a.com/");
-});
 
 test("searchWikipedia junta snippet da busca e resumo da página", async () => {
   const fetchImpl = mockFetch([
@@ -98,7 +72,7 @@ test("gatherEvidence segue com a Wikipedia quando a busca web dá 429", async ()
   assert.equal(out.evidence[0].id, "E1");
   assert.equal(out.evidence[0].provider, "wikipedia-en");
   assert.equal(out.warnings.length, 1);
-  assert.match(out.warnings[0], /brave: limite de requisições/);
+  assert.match(out.warnings[0], /Brave: o limite de buscas/);
 });
 
 test("gatherEvidence lê a página do melhor resultado web e anexa o trecho relevante", async () => {
@@ -106,12 +80,12 @@ test("gatherEvidence lê a página do melhor resultado web e anexa o trecho rele
     "<html><nav>Menu</nav><p>Notícias de hoje sobre muitas coisas diferentes.</p><p>The Berlin Wall fell on 9 November 1989 after weeks of protests.</p></html>";
   const fetchImpl = mockFetch([
     [/wikipedia\.org/, () => jsonResponse({ query: { search: [] } })],
-    [/html\.duckduckgo\.com/, () => textResponse(ddgLike("https://news.example.com/wall", "Berlin Wall fell", "The wall fell in 1989."))],
+    [/api\.tavily\.com/, () => jsonResponse({ results: [{ title: "Berlin Wall fell", url: "https://news.example.com/wall", content: "The wall fell in 1989." }] })],
     [/news\.example\.com/, () => textResponse(page)],
   ]);
   const out = await gatherEvidence({
     claim: "The Berlin Wall fell in 1989.",
-    search: { provider: "duckduckgo" },
+    search: { provider: "tavily", apiKey: "tk" },
     deps: { fetchImpl, sleep: noSleep },
   });
   assert.equal(out.evidence.length, 1);
@@ -120,14 +94,32 @@ test("gatherEvidence lê a página do melhor resultado web e anexa o trecho rele
   assert.ok(!out.evidence[0].text.includes("Menu"));
 });
 
-test("bloqueio do DuckDuckGo (HTTP 202) vira aviso, não erro", async () => {
+test("chave de busca recusada vira aviso legível, não erro", async () => {
   const fetchImpl = mockFetch([
     [/wikipedia\.org/, () => jsonResponse({ query: { search: [] } })],
-    [/html\.duckduckgo\.com/, () => textResponse("<html>verificação</html>", 202)],
+    [/api\.tavily\.com/, () => jsonResponse({ detail: "invalid key" }, 401)],
   ]);
-  const out = await gatherEvidence({ claim: "The Berlin Wall fell in 1989.", search: { provider: "duckduckgo" }, deps: { fetchImpl, sleep: noSleep } });
+  const out = await gatherEvidence({ claim: "The Berlin Wall fell in 1989.", search: { provider: "tavily", apiKey: "x" }, deps: { fetchImpl, sleep: noSleep } });
   assert.deepEqual(out.evidence, []);
-  assert.match(out.warnings.join(" "), /duckduckgo: bloqueado/);
+  assert.deepEqual(out.warnings, ["Tavily: a chave foi recusada"]);
+});
+
+test("claim em espanhol também consulta a Wikipedia ES", async () => {
+  const fetchImpl = mockFetch([[/wikipedia\.org/, () => jsonResponse({ query: { search: [] } })]]);
+  await gatherEvidence({ claim: "El Muro de Berlín cayó en 1989.", lang: "es", search: { provider: "wikipedia" }, deps: { fetchImpl, sleep: noSleep } });
+  assert.ok(fetchImpl.calls.some((c) => c.url.startsWith("https://es.wikipedia.org/")));
+  assert.ok(fetchImpl.calls.some((c) => c.url.startsWith("https://en.wikipedia.org/")));
+});
+
+test("cancelamento interrompe a busca em vez de virar aviso", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const fetchImpl = mockFetch([[/wikipedia\.org/, () => jsonResponse({ query: { search: [] } })]]);
+  await assert.rejects(
+    gatherEvidence({ claim: "The Berlin Wall fell in 1989.", search: {}, deps: { fetchImpl, sleep: noSleep, signal: controller.signal } }),
+    (err) => err.name === "AbortedError"
+  );
+  assert.equal(fetchImpl.calls.length, 0);
 });
 
 test("gatherEvidence não quebra quando tudo falha (timeout/rede)", async () => {
@@ -136,14 +128,9 @@ test("gatherEvidence não quebra quando tudo falha (timeout/rede)", async () => 
   };
   const out = await gatherEvidence({
     claim: "Qualquer afirmação sobre algo.",
-    search: { provider: "duckduckgo" },
+    search: { provider: "brave", apiKey: "bk" },
     deps: { fetchImpl, sleep: noSleep },
   });
   assert.deepEqual(out.evidence, []);
   assert.ok(out.warnings.length >= 2);
 });
-
-function ddgLike(url, title, snippet) {
-  const enc = encodeURIComponent(url);
-  return `<div class="result results_links web-result"><h2><a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=${enc}">${title}</a></h2><a class="result__snippet" href="#">${snippet}</a></div>`;
-}

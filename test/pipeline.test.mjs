@@ -72,8 +72,8 @@ test("checkPage: extrai claims e verifica cada um; erro em um claim não derruba
   assert.equal(report.results[0].verdict, "supported");
   assert.equal(report.results[1].verdict, "error");
   assert.equal(verifyCalls, 2);
-  assert.equal(progress[0], "extract");
-  assert.ok(progress.includes("verify"));
+  assert.deepEqual(progress.slice(0, 2), ["extract", "claims"]);
+  assert.equal(progress.filter((p) => p === "result").length, 2);
 });
 
 test("mapWithConcurrency preserva a ordem e respeita o limite", async () => {

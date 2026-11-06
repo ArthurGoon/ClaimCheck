@@ -4,7 +4,7 @@ import { finalizeVerdict, normalizeVerdictPayload, NO_CITATION_CONFIDENCE_CAP } 
 
 const evidence = [
   { id: "E1", title: "Berlin Wall", url: "https://en.wikipedia.org/wiki/Berlin_Wall", domain: "en.wikipedia.org", provider: "wikipedia-en" },
-  { id: "E2", title: "Fall of the wall", url: "https://example.org/fall", domain: "example.org", provider: "duckduckgo" },
+  { id: "E2", title: "Fall of the wall", url: "https://example.org/fall", domain: "example.org", provider: "tavily" },
 ];
 
 test("normalizeVerdictPayload aceita sinônimos e confiança em porcentagem", () => {

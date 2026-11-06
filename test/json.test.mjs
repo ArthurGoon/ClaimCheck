@@ -38,7 +38,7 @@ test("validateSchema aponta enum, tipo e campo ausente", () => {
 });
 
 test("validateSchema valida itens de array aninhados", () => {
-  const value = { page_summary: "", language: "pt", claims: [{ text: "a", context: "b" }] };
+  const value = { page_summary: "", language: "pt", claims: [{ text: "a", quote: "a", context: "b" }] };
   const errors = validateSchema(value, EXTRACT_SCHEMA);
   assert.deepEqual(errors, ["$.claims[0].search_query: campo obrigatório ausente"]);
 });

@@ -4,55 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ClaimCheck</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
-    <div class="app">
-      <header class="top">
-        <p class="brand">ClaimCheck</p>
-        <p class="tagline">Verificação de afirmações com evidências citadas</p>
-      </header>
+    <header class="top">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="currentColor" />
+          <path d="M7 12.4l3.2 3.2L17.2 8.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>ClaimCheck</span>
+      </div>
+      <button id="settings-btn" class="icon-btn" type="button" title="Configurações" aria-label="Configurações" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </header>
 
-      <section class="controls" aria-label="Controles">
-        <div class="mode" role="radiogroup" aria-label="Modo de análise">
-          <label class="mode-option">
-            <input type="radio" name="mode" value="article" checked />
-            <span>Artigo</span>
-          </label>
-          <label class="mode-option">
-            <input type="radio" name="mode" value="selection" />
-            <span>Seleção</span>
-          </label>
-        </div>
+    <main id="view" aria-live="polite"></main>
+    <div id="toast" class="toast" role="status" hidden></div>
 
-        <button id="verify-btn" class="btn primary" type="button">
-          Verificar
-        </button>
-        <a class="settings-link" href="options.html" target="_blank" rel="noreferrer"
-          >Configurações</a
-        >
-      </section>
-
-      <section id="state" class="state" aria-live="polite">
-        <div class="empty" data-view="empty">
-          <p class="empty-title">Pronto para checar</p>
-          <p class="empty-copy">
-            Abra uma página com texto, escolha o modo e toque em Verificar.
-          </p>
-        </div>
-      </section>
-
-      <footer class="disclaimer">
-        Verificação automática com LLM. Pode errar: abra as fontes citadas antes de
-        compartilhar.
-      </footer>
-    </div>
-    <script src="sidepanel.js"></script>
+    <script type="module" src="sidepanel.js"></script>
   </body>
 </html>

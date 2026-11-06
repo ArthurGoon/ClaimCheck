@@ -44,7 +44,7 @@ function safeJson(body) {
   }
 }
 
-/** Resposta no formato Chat Completions (OpenAI / DeepSeek). */
+/** Resposta no formato Chat Completions (OpenAI / OpenRouter). */
 export function chatCompletion(content) {
   return jsonResponse({ choices: [{ message: { role: "assistant", content }, finish_reason: "stop" }] });
 }

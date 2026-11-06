@@ -63,12 +63,12 @@ test("rankEvidence deduplica, limita por domínio, filtra irrelevantes e ordena"
   const claim = "Brasília foi inaugurada em 1960";
   const results = [
     { title: "Brasília", text: "Brasília foi inaugurada em 1960.", url: "https://pt.wikipedia.org/wiki/Bras%C3%ADlia", provider: "wikipedia-pt" },
-    { title: "Brasília", text: "Brasília foi inaugurada em 1960.", url: "https://pt.wikipedia.org/wiki/Bras%C3%ADlia#hist", provider: "duckduckgo" },
-    { title: "Inauguração de Brasília 1960", text: "Brasília inaugurada.", url: "https://a.com/1", provider: "duckduckgo" },
-    { title: "Brasília inaugurada", text: "Em 1960 Brasília foi inaugurada.", url: "https://a.com/2", provider: "duckduckgo" },
-    { title: "Brasília 1960", text: "inaugurada", url: "https://a.com/3", provider: "duckduckgo" },
-    { title: "Futebol", text: "Resultado do jogo de ontem.", url: "https://b.com/x", provider: "duckduckgo" },
-    { title: "Sem URL", text: "Brasília 1960", url: "ftp://c.com", provider: "duckduckgo" },
+    { title: "Brasília", text: "Brasília foi inaugurada em 1960.", url: "https://pt.wikipedia.org/wiki/Bras%C3%ADlia#hist", provider: "tavily" },
+    { title: "Inauguração de Brasília 1960", text: "Brasília inaugurada.", url: "https://a.com/1", provider: "tavily" },
+    { title: "Brasília inaugurada", text: "Em 1960 Brasília foi inaugurada.", url: "https://a.com/2", provider: "tavily" },
+    { title: "Brasília 1960", text: "inaugurada", url: "https://a.com/3", provider: "tavily" },
+    { title: "Futebol", text: "Resultado do jogo de ontem.", url: "https://b.com/x", provider: "tavily" },
+    { title: "Sem URL", text: "Brasília 1960", url: "ftp://c.com", provider: "tavily" },
   ];
   const ranked = rankEvidence(results, claim, { limit: 10, perDomain: 2 });
   const urls = ranked.map((r) => r.url);

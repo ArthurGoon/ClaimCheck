@@ -2,14 +2,15 @@
 // Eval offline do ClaimCheck: roda busca + veredito em claims rotulados e mede o resultado.
 //
 // Uso:
-//   OPENAI_API_KEY=... node eval/run.mjs
-//   ANTHROPIC_API_KEY=... node eval/run.mjs --provider anthropic --search none
-//   node eval/run.mjs --provider gemini --model gemini-3.6-flash --limit 6
+//   OPENROUTER_API_KEY=... node eval/run.mjs
+//   OPENROUTER_API_KEY=... node eval/run.mjs --model anthropic/claude-haiku-5.5
+//   ANTHROPIC_API_KEY=... TAVILY_API_KEY=... node eval/run.mjs --provider anthropic --search tavily
+//   node eval/run.mjs --provider gemini --limit 6
 //
 // Opções:
-//   --provider openai|anthropic|gemini|deepseek   (padrão: CLAIMCHECK_PROVIDER ou o primeiro com chave no ambiente)
-//   --model <nome>                                (padrão: modelo padrão do provedor)
-//   --search duckduckgo|brave|tavily|none         (padrão: brave/tavily se houver chave, senão duckduckgo)
+//   --provider openrouter|anthropic|openai|gemini  (padrão: CLAIMCHECK_PROVIDER ou o primeiro com chave no ambiente)
+//   --model <id>                                   (padrão: modelo padrão do provedor)
+//   --search wikipedia|tavily|brave                (padrão: tavily/brave se houver chave, senão só Wikipedia)
 //   --limit N        roda só os N primeiros claims
 //   --ids a,b,c      roda só esses ids
 //   --concurrency N  claims em paralelo (padrão 2)
@@ -19,7 +20,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { checkClaim, mapWithConcurrency } from "../lib/pipeline.js";
+import { checkClaim, mapWithConcurrency, llmOptions } from "../lib/pipeline.js";
+import { testConnection } from "../lib/llm.js";
 import { LLM_PROVIDERS, SEARCH_PROVIDERS, resolveModel } from "../lib/providers.js";
 import { computeMetrics, formatMatrix, LABELS } from "./metrics.mjs";
 
@@ -59,7 +61,7 @@ if (!apiKey) {
   process.exit(2);
 }
 
-const searchProvider = args.search || env.CLAIMCHECK_SEARCH || (env.BRAVE_API_KEY ? "brave" : env.TAVILY_API_KEY ? "tavily" : "duckduckgo");
+const searchProvider = args.search || env.CLAIMCHECK_SEARCH || (env.TAVILY_API_KEY ? "tavily" : env.BRAVE_API_KEY ? "brave" : "wikipedia");
 if (!SEARCH_PROVIDERS[searchProvider]) {
   console.error(`Busca desconhecida: ${searchProvider}`);
   process.exit(2);
@@ -87,7 +89,15 @@ if (args.ids) {
 if (args.limit) dataset = dataset.slice(0, Number(args.limit));
 
 const model = resolveModel(settings);
-console.log(`ClaimCheck eval: ${dataset.length} claims · LLM ${provider}/${model} · busca ${searchProvider} + Wikipedia\n`);
+console.log(`ClaimCheck eval: ${dataset.length} claims · LLM ${provider}/${model} · busca ${searchProvider}\n`);
+
+// Falha cedo se a chave ou o modelo não funcionarem, antes de gastar buscas.
+try {
+  await testConnection(llmOptions(settings));
+} catch (err) {
+  console.error(`Teste de conexão falhou: ${err.message}`);
+  process.exit(2);
+}
 
 const startedAt = new Date();
 const rows = await mapWithConcurrency(dataset, Number(args.concurrency) || 2, async (item) => {

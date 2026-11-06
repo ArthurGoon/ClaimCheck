@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "ClaimCheck",
-  "version": "1.0.0",
-  "description": "Verifica afirmações factuais de qualquer página com busca de evidências e LLM.",
-  "permissions": ["storage", "sidePanel", "activeTab", "scripting", "tabs"],
+  "version": "1.1.0",
+  "description": "Checa as afirmações da página que você está lendo, com fontes citadas.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "sidePanel", "scripting", "tabs"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js",
@@ -12,9 +13,8 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "options_page": "options.html",
   "action": {
-    "default_title": "Abrir ClaimCheck",
+    "default_title": "Abrir o ClaimCheck",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

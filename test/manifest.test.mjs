@@ -12,7 +12,6 @@ test("manifest é MV3 válido e aponta para arquivos que existem", () => {
   const files = [
     manifest.background.service_worker,
     manifest.side_panel.default_path,
-    manifest.options_page,
     ...Object.values(manifest.icons),
     ...Object.values(manifest.action.default_icon),
   ];
@@ -27,7 +26,7 @@ test("arquivos injetados pelo background existem", () => {
 });
 
 test("scripts referenciados nas páginas HTML existem", () => {
-  for (const page of ["sidepanel.html", "options.html"]) {
+  for (const page of ["sidepanel.html"]) {
     for (const [, src] of read(page).matchAll(/<script[^>]+src="([^"]+)"/g)) {
       assert.ok(existsSync(new URL(src, root)), `${page}: ${src} não existe`);
     }

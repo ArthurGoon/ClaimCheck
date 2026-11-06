@@ -36,3 +36,9 @@ test("cancelar durante a espera do modelo simulado aborta o pipeline", async () 
     (err) => err.name === "AbortedError"
   );
 });
+
+test("veredito simulado pode citar pelo título da fonte", () => {
+  const user = "Claim: X caiu.\n\nEvidence:\n[E1] Outra coisa (Wikipedia PT)\nSource: a\n\n[E2] Berlin Wall (Wikipedia EN)\nSource: b";
+  const script = { verdicts: [{ match: "caiu", verdict: "supported", confidence: 0.9, explanation: "ok", cite: ["Berlin Wall"] }] };
+  assert.deepEqual(mockVerdict(script, user).citations, ["E2"]);
+});

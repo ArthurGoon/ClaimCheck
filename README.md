@@ -92,7 +92,7 @@ node scripts/screenshots.mjs          # precisa de Chrome e de rede
 node scripts/screenshots.mjs --docs   # também atualiza as imagens deste README
 ```
 
-Ele confere 15 coisas, entre elas: a configuração inicial aparece sem chave; uma chave da Anthropic colada com a OpenRouter selecionada é reconhecida; a OpenRouter real recusa uma chave falsa e o painel mostra a mensagem certa; a verificação completa mostra todas as afirmações com fontes encontradas pela busca; "Mostrar na página" destaca o trecho; o modo seleção lê só o texto selecionado; cancelar funciona; páginas internas do navegador dão um erro claro.
+Ele confere 17 coisas, entre elas: a configuração inicial aparece sem chave; uma chave da Anthropic colada com a OpenRouter selecionada é reconhecida; a OpenRouter real recusa uma chave falsa e o painel mostra a mensagem certa; a verificação completa mostra todas as afirmações com fontes encontradas pela busca; "Mostrar na página" destaca o trecho; o modo seleção lê só o texto selecionado; uma chave inválida da Tavily (chamada real) vira um aviso e o resultado sai com a Wikipedia; cancelar funciona; páginas internas do navegador dão um erro claro.
 
 Como não há chave de LLM no ambiente de teste, o script liga um **modelo simulado** (`lib/mock-llm.js`) com respostas roteirizadas em `scripts/scenarios.mjs`. Ele não aparece na interface: só é ativado por uma chave no storage que o próprio script grava.
 

@@ -198,6 +198,19 @@ try {
   check("chave recusada mostra erro com ação", (await text(".error-card")).includes("Abrir configurações"), await text(".error-title"));
   await shot("11-erro");
 
+  // Busca web com chave inválida (Tavily real): o resultado sai só com a Wikipedia e um aviso.
+  await storage(`await chrome.storage.local.set({ searchProvider: "tavily", searchKeys: { tavily: "tvly-chave-falsa-para-teste" }, claimcheckDevMock: ${JSON.stringify({ ...scenario.mock, delayMs: 200 })} });`);
+  await panel.send("Page.reload");
+  await waitFor(`!!document.querySelector("#verify-btn")`);
+  await click("#verify-btn");
+  await waitFor(`!!document.querySelector(".summary")`, 120_000);
+  const banner = await text(".banner");
+  check("falha da busca web vira aviso discreto", /Tavily: a chave foi recusada/.test(banner), banner.replace(/\s+/g, " "));
+  await shot("13-aviso-busca");
+  await storage(`await chrome.storage.local.set({ searchProvider: "wikipedia", searchKeys: {} });`);
+  await panel.send("Page.reload");
+  await waitFor(`!!document.querySelector("#verify-btn")`);
+
   // 5. Cancelamento no meio.
   await storage(`await chrome.storage.local.set({ claimcheckDevMock: ${JSON.stringify({ ...scenario.mock, delayMs: 3000 })} });`);
   await click("#verify-btn");
@@ -222,6 +235,11 @@ try {
   await click("#settings-btn");
   await sleep(200);
   await shot("12-configuracoes");
+  await click("#clear-btn");
+  await click("#clear-btn");
+  await sleep(300);
+  const keysLeft = await sw.evaluate(`chrome.storage.local.get("llmKeys").then((r) => Object.values(r.llmKeys || {}).filter(Boolean).length)`);
+  check("apagar chaves (dois cliques) limpa o storage", keysLeft === 0);
 } catch (err) {
   console.error(err);
   checks.push({ name: "execução sem exceção", ok: false, detail: err.message });

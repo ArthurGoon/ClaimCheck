@@ -648,6 +648,9 @@ function renderSetup({ onboarding }) {
       syncProvider();
     })
   );
+  keyInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") $("#test-btn").click();
+  });
   keyInput.addEventListener("input", () => {
     draft.llmKeys[draft.llmProvider] = keyInput.value.trim();
     setTestStatus(null, "");
@@ -713,8 +716,19 @@ function renderSetup({ onboarding }) {
       })
     );
     $("[data-back]").addEventListener("click", closeSetup);
-    $("#clear-btn").addEventListener("click", async () => {
-      if (!confirm("Apagar todas as chaves salvas neste navegador?")) return;
+    // Confirmação em dois cliques: diálogos do navegador não são confiáveis no painel lateral.
+    let armed = null;
+    $("#clear-btn").addEventListener("click", async (event) => {
+      const btn = event.currentTarget;
+      if (!armed) {
+        btn.textContent = "Clique de novo para apagar todas as chaves";
+        armed = setTimeout(() => {
+          armed = null;
+          btn.textContent = "Apagar as chaves deste navegador";
+        }, 4000);
+        return;
+      }
+      clearTimeout(armed);
       await chrome.storage.local.set({ llmKeys: {}, searchKeys: {} });
       await loadStored();
       showToast("Chaves apagadas.");

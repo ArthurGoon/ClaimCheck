@@ -114,6 +114,11 @@ try {
   await click("#save-btn");
   await waitFor(`!!${$("#verify-btn")}`);
   check("salvar leva para a tela principal", true);
+  await panel.evaluate(`document.querySelector('[data-mode="article"]').focus()`);
+  await panel.send("Input.dispatchKeyEvent", { type: "keyDown", key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 });
+  await panel.send("Input.dispatchKeyEvent", { type: "keyUp", key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 });
+  check("modo de verificação funciona com as setas do teclado", await panel.evaluate(`document.querySelector('[data-mode="selection"]').getAttribute('aria-checked') === 'true' && document.activeElement.dataset.mode === 'selection'`));
+  await click('[data-mode="article"]');
   await shot("04-pronto");
 
   // 2. Verificação da página inteira.
@@ -134,6 +139,28 @@ try {
   check("reabrir o painel mantém o resultado", await panel.evaluate(`!!document.querySelector(".summary")`));
   const saved = await sw.evaluate(`chrome.storage.session.get("report:${tabId}").then((r) => r["report:${tabId}"])`);
   writeFileSync(join(outDir, "report.json"), JSON.stringify(saved, null, 2));
+  await click('[data-filter="not_enough_evidence"]');
+  check("filtro mostra só afirmações inconclusivas e preserva foco", await panel.evaluate(`document.querySelectorAll('.claims > .claim').length === ${saved.claims.filter((c) => c.verdict === "not_enough_evidence").length} && document.activeElement.dataset.filter === 'not_enough_evidence'`));
+  await click('[data-filter="all"]');
+  check("filtro Todas restaura os resultados", await panel.evaluate(`document.querySelectorAll('.claims > .claim').length === ${saved.claims.length}`));
+  await panel.send("Emulation.setDeviceMetricsOverride", { width: 320, height: 800, deviceScaleFactor: 1, mobile: false });
+  check("painel estreito não tem rolagem horizontal", await panel.evaluate('document.documentElement.scrollWidth <= innerWidth'));
+  await shot("resultado-estreito");
+  await panel.send("Emulation.setDeviceMetricsOverride", { ...PANEL, deviceScaleFactor: 1, mobile: false });
+  check("página longa avisa que a leitura foi parcial", saved.meta.truncated && saved.meta.charCount === 12000 && saved.meta.totalChars > 12000 && (await text(".coverage-banner")).includes("Leitura parcial"));
+
+  // The article extractor and selection mode must enforce the same limit.
+  const longSelection = await sw.evaluate(`chrome.scripting.executeScript({ target: { tabId: ${tabId} }, func: () => {
+    const p = document.createElement('p');
+    p.textContent = 'Texto selecionado para testar o limite de leitura. '.repeat(400);
+    document.body.append(p);
+    const range = document.createRange(); range.selectNodeContents(p);
+    getSelection().removeAllRanges(); getSelection().addRange(range);
+    const result = window.ClaimCheckPage.extract('selection');
+    getSelection().removeAllRanges(); p.remove();
+    return result;
+  } }).then((results) => results[0].result)`);
+  check("seleção longa usa o mesmo limite e informa o corte", longSelection.truncated && longSelection.text.length === 12000 && longSelection.totalChars > 12000);
 
   // Destaque na página da primeira afirmação: composição página + painel, como fica no Chrome.
   const locate = async (index) => {
@@ -204,7 +231,7 @@ try {
   await waitFor(`!!document.querySelector("#verify-btn")`);
   await click("#verify-btn");
   await waitFor(`!!document.querySelector(".summary")`, 120_000);
-  const banner = await text(".banner");
+  const banner = await text(".banner:not(.coverage-banner)");
   check("falha da busca web vira aviso discreto", /Tavily: a chave foi recusada/.test(banner), banner.replace(/\s+/g, " "));
   await shot("13-aviso-busca");
   await storage(`await chrome.storage.local.set({ searchProvider: "wikipedia", searchKeys: {} });`);
@@ -235,11 +262,19 @@ try {
   await click("#settings-btn");
   await sleep(200);
   await shot("12-configuracoes");
+  // An upgraded install can still have keys in the old, single-key format.
+  await storage(`await chrome.storage.local.set({ llmApiKey: "chave-legada-de-teste", searchApiKey: "busca-legada-de-teste" });`);
   await click("#clear-btn");
   await click("#clear-btn");
   await sleep(300);
   const keysLeft = await sw.evaluate(`chrome.storage.local.get("llmKeys").then((r) => Object.values(r.llmKeys || {}).filter(Boolean).length)`);
   check("apagar chaves (dois cliques) limpa o storage", keysLeft === 0);
+  const legacyLeft = await sw.evaluate(`chrome.storage.local.get(["llmApiKey", "searchApiKey"]).then((r) => Object.keys(r).length)`);
+  check("apagar chaves também remove o formato antigo", legacyLeft === 0);
+  await storage(`await chrome.storage.local.remove("claimcheckDevMock");`);
+  await panel.send("Page.reload");
+  await waitFor(`!!document.querySelector("#key-input")`);
+  check("reabrir após apagar chaves volta à configuração sem chave", (await text("h1")).includes("Configure") && (await panel.evaluate(`${$("#key-input")}.value`)) === "");
 } catch (err) {
   console.error(err);
   checks.push({ name: "execução sem exceção", ok: false, detail: err.message });

@@ -95,7 +95,8 @@ async function runCheck({ tabId, mode, signal, post }) {
 
   const page = await extractFromTab(tabId, mode);
   if (signal.aborted) throw new AbortedError();
-  post({ type: "progress", step: "page", title: page.title, url: page.url, chars: page.text.length, mode });
+  post({ type: "progress", step: "page", title: page.title, url: page.url, chars: page.text.length,
+    totalChars: page.totalChars, truncated: page.truncated, mode });
 
   const report = await checkPage({
     page,
@@ -112,7 +113,8 @@ async function runCheck({ tabId, mode, signal, post }) {
     pageSummary: report.pageSummary,
     claims: report.results,
     warnings: report.warnings,
-    meta: { ...describeSettings(settings), charCount: page.text.length, finishedAt: Date.now() },
+    meta: { ...describeSettings(settings), charCount: page.text.length, totalChars: page.totalChars,
+      truncated: page.truncated, finishedAt: Date.now() },
   };
   // Guarda o último resultado da aba para o painel mostrar de novo se for reaberto.
   await chrome.storage.session.set({ [`report:${tabId}`]: result }).catch(() => {});

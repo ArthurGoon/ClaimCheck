@@ -4,8 +4,9 @@
   const HIGHLIGHT_NAME = "claimcheck";
 
   function extract(mode) {
-    const text = mode === "selection" ? window.ClaimCheckExtract.extractSelection() : window.ClaimCheckExtract.extractArticle();
-    return { text, url: location.href, title: document.title || "", mode };
+    const extractor = window.ClaimCheckExtract;
+    const page = mode === "selection" ? extractor.limitText(extractor.extractSelection()) : extractor.extractArticleInfo();
+    return { ...page, url: location.href, title: document.title || "", mode };
   }
 
   // Normalização usada dos dois lados da busca: só letras e números, minúsculos.

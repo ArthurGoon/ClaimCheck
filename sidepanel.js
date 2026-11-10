@@ -47,6 +47,7 @@ const state = {
   tab: null,
   run: null, // { tabId, step, page, claims: [], results: [], startedAt }
   report: null,
+  reportFilter: "all",
   error: null,
   port: null,
 };
@@ -56,6 +57,18 @@ init();
 async function init() {
   await loadStored();
   settingsBtn.addEventListener("click", () => (state.screen === "setup" ? closeSetup() : openSetup()));
+  view.addEventListener("keydown", (event) => {
+    const group = event.target.closest('[role="radiogroup"]');
+    if (!group || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    const options = [...group.querySelectorAll('[role="radio"]:not(:disabled)')];
+    const current = options.indexOf(event.target);
+    if (current < 0 || !options.length) return;
+    event.preventDefault();
+    const direction = ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1;
+    const index = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (current + direction + options.length) % options.length;
+    options[index].click();
+    options[index].focus();
+  });
   await refreshTab();
   if (!hasKey()) state.screen = "setup";
   render();
@@ -122,13 +135,15 @@ function render() {
 function renderHome() {
   const running = Boolean(state.run);
   view.innerHTML = `
+    ${!running && !state.report && !state.error ? `<div class="home-intro"><p class="eyebrow">UM OLHAR A MAIS</p><h1>Leia com mais contexto.</h1><p>De uma afirmação às fontes que ajudam a entendê-la.</p></div>` : ""}
     <section class="page-card" id="page-card"></section>
     <div class="controls">
       <div class="segmented" role="radiogroup" aria-label="O que verificar">
         ${segment("article", "Página inteira")}
         ${segment("selection", "Só a seleção")}
       </div>
-      <button id="verify-btn" class="btn ${running ? "secondary" : "primary"} block" type="button">
+      <p class="mode-help" id="mode-help">${state.mode === "selection" ? "Selecione o texto na página antes de verificar." : "Encontra os principais fatos no texto desta página."}</p>
+      <button id="verify-btn" class="btn ${running || state.report ? "secondary" : "primary"} block" type="button">
         ${running ? "Cancelar" : state.report ? "Verificar de novo" : "Verificar"}
       </button>
     </div>
@@ -139,6 +154,7 @@ function renderHome() {
     el.addEventListener("click", () => {
       if (state.run) return;
       state.mode = el.dataset.mode;
+      view.querySelector("#mode-help").textContent = state.mode === "selection" ? "Selecione o texto na página antes de verificar." : "Encontra os principais fatos no texto desta página.";
       view.querySelectorAll("[data-mode]").forEach((s) => s.setAttribute("aria-checked", String(s.dataset.mode === state.mode)));
     })
   );
@@ -187,9 +203,9 @@ function renderOutputContent(out) {
       <div class="empty-icon" aria-hidden="true">
         <svg viewBox="0 0 48 48"><rect x="9" y="7" width="30" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 17h16M16 24h16M16 31h9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="35" cy="34" r="8" fill="var(--brand)"/><path d="M31.5 34.2l2.4 2.4 4.6-4.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <p class="empty-title">Pronto para verificar</p>
-      <p class="empty-copy">O ClaimCheck separa as afirmações factuais da página, busca fontes e mostra o que se confirma.</p>
-      <p class="empty-copy">Para checar só um trecho, selecione o texto e escolha <b>Só a seleção</b>.</p>
+      <p class="empty-title">Uma leitura, mais perspectiva.</p>
+      <p class="empty-copy">Veja o que tem respaldo, o que diverge das fontes e o que ainda precisa de evidência.</p>
+      <div class="outcome-guide"><span><i class="guide-dot supported"></i>Confirmada</span><span><i class="guide-dot refuted"></i>Refutada</span><span><i class="guide-dot uncertain"></i>Inconclusiva</span></div>
     </div>
     ${footer()}`;
 }
@@ -202,6 +218,7 @@ function startRun() {
   if (!tabId) return showToast("Nenhuma aba ativa.");
 
   state.report = null;
+  state.reportFilter = "all";
   state.error = null;
   state.run = { tabId, url: state.tab.url, step: "read", page: null, claims: null, results: [], stages: {}, startedAt: Date.now() };
   renderHome();
@@ -239,6 +256,7 @@ function finishRun({ report, error }) {
   state.run = null;
   port?.disconnect();
   state.report = report || null;
+  state.reportFilter = "all";
   state.error = error || null;
   renderHome();
 }
@@ -247,7 +265,7 @@ function onProgress(msg) {
   const run = state.run;
   if (!run) return;
   if (msg.step === "page") {
-    run.page = { title: msg.title, chars: msg.chars };
+    run.page = { title: msg.title, chars: msg.chars, totalChars: msg.totalChars, truncated: msg.truncated };
     run.step = "extract";
     renderPageCard();
   } else if (msg.step === "extract") {
@@ -268,7 +286,7 @@ function renderRun(out) {
   const total = run.claims?.length ?? 0;
   const done = run.results.filter(Boolean).length;
   const steps = [
-    { key: "read", label: "Lendo a página", detail: run.page ? `${run.page.chars.toLocaleString("pt-BR")} caracteres` : "" },
+    { key: "read", label: "Lendo a página", detail: run.page ? `${run.page.chars.toLocaleString("pt-BR")} caracteres${run.page.truncated ? " · leitura parcial" : ""}` : "" },
     { key: "extract", label: "Encontrando afirmações", detail: run.claims ? plural(total, "afirmação", "afirmações") : "" },
     { key: "verify", label: "Buscando fontes e avaliando", detail: run.claims ? `${done} de ${total}` : "" },
   ];
@@ -287,11 +305,15 @@ function renderRun(out) {
   let stepperEl = out.querySelector(".stepper");
   let list = out.querySelector(".claims");
   if (!stepperEl) {
-    out.innerHTML = `<ol class="stepper"></ol><div class="claims"></div>`;
+    out.innerHTML = `<div class="run-intro"><p class="eyebrow">CONSULTANDO AS FONTES</p><h2>Cada afirmação, um olhar atento.</h2><p>Os resultados aparecem assim que ficam prontos.</p></div><div class="run-progress" aria-label="Afirmações verificadas"><i></i></div><ol class="stepper"></ol><div class="claims"></div>`;
     stepperEl = out.querySelector(".stepper");
     list = out.querySelector(".claims");
   }
   stepperEl.innerHTML = stepper;
+  const meter = out.querySelector(".run-progress");
+  meter.classList.toggle("indeterminate", !total);
+  meter.querySelector("i").style.width = total ? `${done / total * 100}%` : "30%";
+  if (total) { meter.setAttribute("role", "progressbar"); meter.setAttribute("aria-valuenow", done); meter.setAttribute("aria-valuemax", total); }
 
   // Atualiza só os cartões que mudaram, para não piscar nem fechar o que estiver aberto.
   (run.claims || []).forEach((claim, i) => {
@@ -324,8 +346,12 @@ function renderRun(out) {
 
 function renderReport(out, report) {
   const claims = report.claims || [];
+  const coverage = report.meta?.truncated
+    ? `<details class="banner coverage-banner"><summary>Leitura parcial <span>· ${Number(report.meta.charCount).toLocaleString("pt-BR")} de ${Number(report.meta.totalChars).toLocaleString("pt-BR")} caracteres</span></summary><p>Foi analisado o começo do texto extraído. Para conferir outra parte, selecione um trecho na página e use <b>Só a seleção</b>.</p></details>`
+    : "";
   if (!claims.length) {
     out.innerHTML = `
+      ${coverage}
       <div class="empty">
         <p class="empty-title">Nenhuma afirmação checável</p>
         <p class="empty-copy">Não encontrei fatos verificáveis ${report.mode === "selection" ? "no trecho selecionado" : "nesta página"}. Opiniões, previsões e textos muito curtos ficam de fora.</p>
@@ -338,7 +364,7 @@ function renderReport(out, report) {
   for (const c of claims) counts[c.verdict] = (counts[c.verdict] || 0) + 1;
   const summary = ["supported", "refuted", "not_enough_evidence", "error"]
     .filter((v) => counts[v])
-    .map((v) => `<span class="count ${v}"><span class="dot"></span>${counts[v]} ${counts[v] === 1 ? VERDICTS[v].label.toLowerCase() : VERDICTS[v].plural}</span>`)
+    .map((v) => `<button type="button" class="count ${v}" data-filter="${v}" aria-pressed="${state.reportFilter === v}"><span class="dot"></span>${counts[v]} ${counts[v] === 1 ? VERDICTS[v].label.toLowerCase() : VERDICTS[v].plural}</button>`)
     .join("");
 
   const warnings = report.warnings?.length
@@ -348,13 +374,17 @@ function renderReport(out, report) {
     : "";
 
   const wikiOnly = report.meta?.searchProvider === "wikipedia";
+  const sourceCount = new Set(claims.flatMap((c) => (c.citations || []).map((s) => s.url))).size;
   out.innerHTML = `
     <div class="summary">
-      <p class="summary-title">${plural(claims.length, "afirmação verificada", "afirmações verificadas")}</p>
-      <div class="counts">${summary}</div>
+      <p class="eyebrow">O QUE AS FONTES DIZEM</p>
+      <h1 class="summary-title">${plural(claims.length, "afirmação verificada", "afirmações verificadas")}</h1>
+      <p class="summary-meta">${plural(sourceCount, "fonte citada", "fontes citadas")} · Confira os detalhes antes de concluir.</p>
     </div>
+    ${coverage}
     ${warnings}
-    <div class="claims">${claims.map((c, i) => claimCard(c, i, { tabId: report.tabId })).join("")}</div>
+    <div class="counts" role="group" aria-label="Filtrar afirmações"><button type="button" class="count all" data-filter="all" aria-pressed="${state.reportFilter === "all"}">Todas <span>${claims.length}</span></button>${summary}</div>
+    <div class="claims">${claims.map((c, i) => state.reportFilter === "all" || state.reportFilter === c.verdict ? claimCard(c, i, { tabId: report.tabId }) : "").join("")}</div>
     ${
       wikiOnly && claims.some((c) => c.verdict === "not_enough_evidence")
         ? `<p class="tip">Fatos recentes costumam ficar fora da Wikipedia. Com uma chave da Tavily ou do Brave a busca cobre a web aberta. <button type="button" class="link" data-open-settings>Configurar busca</button></p>`
@@ -362,6 +392,11 @@ function renderReport(out, report) {
     }
     ${footer(report)}`;
   bindClaimCards(out, { tabId: report.tabId });
+  out.querySelectorAll("[data-filter]").forEach((btn) => btn.addEventListener("click", () => {
+    state.reportFilter = btn.dataset.filter;
+    renderOutput();
+    out.querySelector(`[data-filter="${state.reportFilter}"]`)?.focus({ preventScroll: true });
+  }));
   out.querySelector("[data-open-settings]")?.addEventListener("click", openSetup);
 }
 
@@ -396,10 +431,10 @@ function claimCard(c, index, { tabId, fresh = false }) {
   return `
     <article class="claim ${verdict}${fresh ? " fresh" : ""}">
       <div class="claim-top">
-        <span class="chip ${verdict}"><span class="dot"></span>${VERDICTS[verdict].label}</span>
+        <span class="claim-label"><span class="claim-index">${String(index + 1).padStart(2, "0")}</span><span class="chip ${verdict}"><span class="dot"></span>${VERDICTS[verdict].label}</span></span>
         ${
           showConfidence
-            ? `<span class="confidence" title="Confiança declarada pelo modelo"><span class="bar"><i style="width:${confidence}%"></i></span>${confidence}%</span>`
+            ? `<span class="confidence" title="Confiança declarada pelo modelo, sem calibração">Modelo: ${confidence}%</span>`
             : ""
         }
       </div>
@@ -450,7 +485,7 @@ function footer(report) {
       SEARCH_PROVIDERS[s.searchProvider].label
     )}`;
   }
-  return `<footer class="foot"><p>${line}</p><p>Verificação automática. Pode errar: confira as fontes antes de compartilhar.</p></footer>`;
+  return `<footer class="foot"><p>Verificação automática. Pode errar: confira as fontes antes de compartilhar.</p><details><summary>Modelo e busca utilizados</summary><p>${line}</p></details></footer>`;
 }
 
 function renderError(out, error) {
@@ -492,8 +527,8 @@ function renderSetup({ onboarding }) {
     <div class="setup">
       ${
         onboarding
-          ? `<h1>Configure em um minuto</h1>
-             <p class="lede">O ClaimCheck usa um modelo de linguagem com a sua própria chave de API. A chave fica salva só neste navegador e vai direto para o provedor.</p>`
+          ? `<div class="setup-welcome"><p class="eyebrow">SEU PRIMEIRO PASSO</p><h1>Configure uma vez.<br>Confira quando quiser.</h1><p>Conecte seu modelo para transformar a leitura em uma conversa com as fontes.</p></div>
+             <p class="lede privacy-note">Sua chave fica neste navegador e é enviada diretamente ao provedor escolhido.</p>`
           : `<div class="setup-head"><button type="button" class="link back" data-back>← Voltar</button><h1>Configurações</h1></div>`
       }
 
@@ -525,7 +560,7 @@ function renderSetup({ onboarding }) {
       <section class="field">
         <label class="field-label" for="model-select"><span class="num">3</span>Modelo</label>
         <select id="model-select"></select>
-        <input id="model-custom" type="text" autocomplete="off" spellcheck="false" placeholder="id do modelo, ex.: provedor/modelo" hidden />
+        <input id="model-custom" type="text" aria-label="Identificador do modelo personalizado" autocomplete="off" spellcheck="false" placeholder="id do modelo, ex.: provedor/modelo" hidden />
         <p class="hint" id="model-hint"></p>
       </section>
 
@@ -551,7 +586,7 @@ function renderSetup({ onboarding }) {
             .join("")}
         </div>
         <div id="search-key-row" class="key-row" hidden>
-          <input id="search-key" type="password" autocomplete="off" spellcheck="false" />
+          <input id="search-key" type="password" aria-label="Chave da busca de fontes" autocomplete="off" spellcheck="false" />
         </div>
         <p class="hint" id="search-hint"></p>
       </section>
@@ -658,6 +693,8 @@ function renderSetup({ onboarding }) {
   });
   $("#key-eye").addEventListener("click", () => {
     keyInput.type = keyInput.type === "password" ? "text" : "password";
+    $("#key-eye").setAttribute("aria-label", keyInput.type === "password" ? "Mostrar chave" : "Ocultar chave");
+    $("#key-eye").title = keyInput.type === "password" ? "Mostrar chave" : "Ocultar chave";
   });
   modelSelect.addEventListener("change", () => {
     modelCustom.hidden = modelSelect.value !== "__custom";
@@ -730,6 +767,7 @@ function renderSetup({ onboarding }) {
       }
       clearTimeout(armed);
       await chrome.storage.local.set({ llmKeys: {}, searchKeys: {} });
+      await chrome.storage.local.remove(["llmApiKey", "searchApiKey"]);
       await loadStored();
       showToast("Chaves apagadas.");
       render();

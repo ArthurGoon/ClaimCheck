@@ -1,0 +1,127 @@
+[
+  {
+    "name": "página real abriu",
+    "ok": true,
+    "detail": "https://pt.wikipedia.org/wiki/Muro_de_Berlim"
+  },
+  {
+    "name": "sem chave abre a configuração",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "reconhece chave de outro provedor pelo prefixo",
+    "ok": true,
+    "detail": "Parece uma chave da Anthropic. Usar Anthropic"
+  },
+  {
+    "name": "OpenRouter real recusa chave falsa com mensagem clara",
+    "ok": true,
+    "detail": "A OpenRouter recusou a chave. Confira se ela foi colada inteira."
+  },
+  {
+    "name": "teste de conexão ok (modelo simulado)",
+    "ok": true,
+    "detail": "Conexão ok. O modelo simulado respondeu em 0,9 s."
+  },
+  {
+    "name": "salvar leva para a tela principal",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "modo de verificação funciona com as setas do teclado",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "resultado com todas as afirmações",
+    "ok": true,
+    "detail": "Confirmada, Confirmada, Confirmada, Confirmada, Inconclusiva"
+  },
+  {
+    "name": "vereditos citam fontes reais encontradas pela busca",
+    "ok": true,
+    "detail": "8 fontes citadas"
+  },
+  {
+    "name": "reabrir o painel mantém o resultado",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "filtro mostra só afirmações inconclusivas e preserva foco",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "filtro Todas restaura os resultados",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "painel estreito não tem rolagem horizontal",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "página longa avisa que a leitura foi parcial",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "seleção longa usa o mesmo limite e informa o corte",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "'Mostrar na página' destaca o trecho citado",
+    "ok": true,
+    "detail": "o número de cidadãos da RDA que se deslocam para a Alemanha Ocidental totalizou "
+  },
+  {
+    "name": "modo seleção lê só o trecho selecionado",
+    "ok": true,
+    "detail": "600 de 615 caracteres"
+  },
+  {
+    "name": "seleção vazia vira aviso",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "chave recusada mostra erro com ação",
+    "ok": true,
+    "detail": "Chave recusada"
+  },
+  {
+    "name": "falha da busca web vira aviso discreto",
+    "ok": true,
+    "detail": "Parte da busca falhou e o resultado usa só as fontes que responderam. Tavily: a chave foi recusada"
+  },
+  {
+    "name": "cancelar volta ao estado inicial",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "página interna mostra erro claro",
+    "ok": true,
+    "detail": "Página não suportada"
+  },
+  {
+    "name": "apagar chaves (dois cliques) limpa o storage",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "apagar chaves também remove o formato antigo",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "reabrir após apagar chaves volta à configuração sem chave",
+    "ok": true,
+    "detail": ""
+  }
+]

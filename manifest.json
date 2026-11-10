@@ -1,11 +1,19 @@
 {
   "manifest_version": 3,
   "name": "ClaimCheck",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Checa as afirmações da página que você está lendo, com fontes citadas.",
   "minimum_chrome_version": "116",
-  "permissions": ["storage", "sidePanel", "scripting", "tabs"],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"

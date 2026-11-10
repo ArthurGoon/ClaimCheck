@@ -1,8 +1,10 @@
 # ClaimCheck
 
 [![CI](https://github.com/ArthurGoon/ClaimCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ArthurGoon/ClaimCheck/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ArthurGoon/ClaimCheck)](https://github.com/ArthurGoon/ClaimCheck/releases/latest)
+[![Licença MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Extensão do Chrome que checa as afirmações da página que você está lendo. Você abre o painel lateral, clica em **Verificar** (a página inteira ou só o trecho selecionado) e recebe a lista de afirmações factuais com um veredito (**confirmada**, **refutada** ou **inconclusiva**), a confiança, uma explicação de uma linha e as fontes. Clicando em "Mostrar na página", o trecho da afirmação fica destacado no texto.
+Extensão do Chrome que checa as afirmações da página que você está lendo. Você abre o painel lateral, clica em **Verificar** (a página inteira ou só o trecho selecionado) e recebe a lista de afirmações factuais com um veredito (**confirmada**, **refutada** ou **inconclusiva**), a confiança, uma explicação de uma linha e as fontes. Clicando em "Mostrar na página", o trecho da afirmação fica destacado no texto. Os filtros permitem explorar cada tipo de resultado, e o painel informa quando a leitura cobre só o começo de um texto longo.
 
 ![ClaimCheck no painel lateral do Chrome, ao lado de um artigo da Wikipedia](docs/claimcheck.png)
 
@@ -10,12 +12,20 @@ Extensão do Chrome que checa as afirmações da página que você está lendo. 
 
 ## Instalação
 
+Versão **1.2.0** · extensão para uso pessoal e portfólio. [Notas da versão](CHANGELOG.md) · [Validação](docs/VALIDACAO.md).
+
 Não tem build. Precisa do Chrome 116 ou mais novo.
 
-1. Clone o repositório.
+1. Baixe e extraia o ZIP da extensão na [release v1.2.0](https://github.com/ArthurGoon/ClaimCheck/releases/tag/v1.2.0) ou clone o repositório:
+
+   ```bash
+   git clone https://github.com/ArthurGoon/ClaimCheck.git
+   ```
 2. Abra `chrome://extensions`, ative o **Modo do desenvolvedor** e clique em **Carregar sem compactação**.
-3. Escolha a pasta do repositório (a que tem o `manifest.json`).
+3. Escolha a pasta extraída ou clonada que contém o `manifest.json`.
 4. Clique no ícone do ClaimCheck. O painel lateral abre direto na configuração.
+
+Para atualizar uma instalação existente, substitua os arquivos e clique em **Recarregar** em `chrome://extensions`. As configurações ficam no armazenamento local do navegador.
 
 ## Configuração
 
@@ -36,7 +46,7 @@ O mais simples é a **OpenRouter**: uma chave só dá acesso a modelos de vário
 
 O campo de modelo também aceita qualquer id digitado (por exemplo, qualquer modelo do catálogo da OpenRouter). Se colar uma chave de outro provedor, o painel percebe pelo prefixo e oferece a troca. As chaves ficam em `chrome.storage.local`, só neste navegador, e vão direto para o provedor escolhido.
 
-**Busca de fontes.** A Wikipedia é sempre consultada, pela API oficial, no idioma da página e em inglês. Para cobrir notícias e sites fora da Wikipedia, dá para adicionar uma chave da [Tavily](https://app.tavily.com/) (o plano gratuito tem 1.000 créditos por mês) ou do [Brave Search](https://api-dashboard.search.brave.com/) nas configurações. Se uma busca falhar, o resultado sai com as fontes que responderam e um aviso discreto.
+**Busca de fontes.** A Wikipedia é sempre consultada, pela API oficial, no idioma da página e em inglês. Para cobrir notícias e sites fora da Wikipedia, dá para adicionar uma chave da [Tavily](https://app.tavily.com/) ou do [Brave Search](https://api-dashboard.search.brave.com/) nas configurações. Se uma busca falhar, o resultado sai com as fontes que responderam e um aviso discreto.
 
 ## Como funciona
 
@@ -79,7 +89,7 @@ Ainda não tenho números para publicar: esta versão não foi rodada com uma ch
 ## Testes
 
 ```bash
-npm test     # 82 testes com node --test, sem rede (fetch simulado)
+npm test     # 84 testes com node --test, sem rede (fetch simulado)
 npm run check
 ```
 
@@ -92,7 +102,9 @@ node scripts/screenshots.mjs          # precisa de Chrome e de rede
 node scripts/screenshots.mjs --docs   # também atualiza as imagens deste README
 ```
 
-Ele confere 17 coisas, entre elas: a configuração inicial aparece sem chave; uma chave da Anthropic colada com a OpenRouter selecionada é reconhecida; a OpenRouter real recusa uma chave falsa e o painel mostra a mensagem certa; a verificação completa mostra todas as afirmações com fontes encontradas pela busca; "Mostrar na página" destaca o trecho; o modo seleção lê só o texto selecionado; uma chave inválida da Tavily (chamada real) vira um aviso e o resultado sai com a Wikipedia; cancelar funciona; páginas internas do navegador dão um erro claro.
+`npm run test:e2e` é um atalho para o mesmo teste. O registro da revisão atual está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+
+Ele confere 25 coisas, entre elas: a configuração inicial aparece sem chave; uma chave da Anthropic colada com a OpenRouter selecionada é reconhecida; a OpenRouter real recusa uma chave falsa e o painel mostra a mensagem certa; a verificação completa mostra todas as afirmações com fontes encontradas pela busca; "Mostrar na página" destaca o trecho; o modo seleção lê só o texto selecionado; uma chave inválida da Tavily (chamada real) vira um aviso e o resultado sai com a Wikipedia; cancelar funciona; páginas internas do navegador dão um erro claro.
 
 Como não há chave de LLM no ambiente de teste, o script liga um **modelo simulado** (`lib/mock-llm.js`) com respostas roteirizadas em `scripts/scenarios.mjs`. Ele não aparece na interface: só é ativado por uma chave no storage que o próprio script grava.
 
@@ -111,7 +123,7 @@ Como não há chave de LLM no ambiente de teste, o script liga um **modelo simul
 
 - O caminho com um modelo de verdade ainda não foi testado de ponta a ponta. Os formatos de requisição foram conferidos na documentação de cada provedor e com chaves inválidas (OpenRouter, Anthropic, OpenAI e Gemini respondem com erro de autenticação, não de formato), mas não com uma chave válida.
 - Só com a Wikipedia, fatos recentes ou pouco cobertos tendem a sair como inconclusivos.
-- A extração do texto é heurística e corta em 12.000 caracteres. Páginas muito longas são checadas só no começo.
+- A extração do texto é heurística e limita a leitura a 12.000 caracteres, tanto na página quanto na seleção. O painel avisa quando a leitura foi parcial e informa o total extraído; para verificar outra parte, selecione o trecho desejado. Mesmo em textos curtos, a verificação cobre apenas as afirmações extraídas, não cada frase da página.
 - Muitos sites bloqueiam leitura automática ou dependem de JavaScript; nesses casos o agente usa só o resumo da busca.
 - A confiança é a que o modelo declara, sem calibração.
 - O dataset do eval é pequeno (24 itens) e foi montado por mim; serve para comparar versões e modelos, não como benchmark.
@@ -149,6 +161,10 @@ scripts/            teste ponta a ponta com Chrome headless e checagem de sintax
 test/               testes com node --test
 ```
 
+## Contribuir e relatar problemas
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao abrir uma issue, informe Chrome, provedor/modelo, busca e passos para reproduzir. Nunca inclua chaves de API ou conteúdo privado.
+
 ## Licença
 
-MIT
+Código sob [MIT](LICENSE). A fonte Inter incluída usa a [SIL Open Font License](fonts/OFL.txt).

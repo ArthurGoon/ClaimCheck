@@ -70,3 +70,19 @@ test("buscas com chave exigem chave; Wikipedia não", () => {
   assert.equal(SEARCH_PROVIDERS.tavily.needsKey, true);
   assert.equal(SEARCH_PROVIDERS.brave.needsKey, true);
 });
+
+test("mapas atuais vazios não restauram chaves e modelos legados", () => {
+  const s = runtimeSettings({
+    llmProvider: "openai",
+    llmApiKey: "chave-antiga",
+    llmModel: "modelo-antigo",
+    searchProvider: "tavily",
+    searchApiKey: "busca-antiga",
+    llmKeys: {},
+    llmModels: {},
+    searchKeys: {},
+  });
+  assert.equal(s.llmApiKey, "");
+  assert.equal(s.llmModel, "");
+  assert.equal(s.searchApiKey, "");
+});
